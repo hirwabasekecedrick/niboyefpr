@@ -10,7 +10,7 @@ import { Calendar, MapPin, Info } from "lucide-react";
 export default async function ActivityDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) redirect("/login");
-
+    //Params to get the activity id
     const activityId = params.id;
 
     const activity = await prisma.activity.findUnique({
@@ -48,7 +48,7 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                         <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${activity.level === 'SECTOR' ? 'bg-red-100 text-primary' :
-                                activity.level === 'CELL' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                            activity.level === 'CELL' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
                             }`}>
                             {activity.level} Level
                         </span>
