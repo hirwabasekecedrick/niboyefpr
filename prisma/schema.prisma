@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  VILLAGE_LEADER
+  CELL_ADMIN
+  SECTOR_ADMIN
+}
+
+enum Level {
+  VILLAGE
+  CELL
+  SECTOR
+}
+
+model Sector {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  cells   Cell[]
+  users   User[]
+  reports Report[]
+}
+
+model Cell {
+  id       String    @id @default(uuid())
+  name     String
+  sectorId String
+  sector   Sector    @relation(fields: [sectorId], references: [id])
+  villages Village[]
+  users    User[]
+  reports  Report[]
+}
+
+model Village {
+  id      String   @id @default(uuid())
+  name    String
+  cellId  String
+  cell    Cell     @relation(fields: [cellId], references: [id])
+  users   User[]
+  reports Report[]
+}
+
+model User {
+  id            String         @id @default(uuid())
+  nationalId    String         @unique
+  name          String
+  phone         String
+  passwordHash  String
+  role          Role           @default(MEMBER)
+  isVerified    Boolean        @default(false) // Data Verification by Cell Admins
+  
+  villageId     String?
+  village       Village?       @relation(fields: [villageId], references: [id])
+  
+  cellId        String?
+  cell          Cell?          @relation(fields: [cellId], references: [id])
+  
+  sectorId      String?
+  sector        Sector?        @relation(fields: [sectorId], references: [id])
+
+  attendances        Attendance[]
+  eventRegistrations EventRegistration[]
+  contributions      Contribution[]
+  createdAnnouncements Announcement[]
+  reports            Report[]      @relation("ReportAuthor")
+  feedbacks          Feedback[]
+}
+
+model Activity {
+  id            String              @id @default(uuid())
+  title         String
+  description   String
+  level         Level
+  date          DateTime
+  attendances   Attendance[]
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  activityId   String
+  activity     Activity @relation(fields: [activityId], references: [id])
+  registeredAt DateTime @default(now())
+
+  @@unique([userId, activityId])
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id])
+  date       DateTime @default(now())
+
+  @@unique([userId, activityId])
+}
+
+model Contribution {
+  id           String   @id @default(uuid())
+  amount       Float
+  date         DateTime @default(now())
+  memberId     String
+  member       User     @relation(fields: [memberId], references: [id])
+  recordedById String
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  level       Level
+  createdAt   DateTime @default(now())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  imageUrl  String?  // For village leaders to insert images
+  level     Level
+  createdAt DateTime @default(now())
+  
+  authorId  String
+  author    User     @relation("ReportAuthor", fields: [authorId], references: [id])
+  
+  villageId String?
+  village   Village? @relation(fields: [villageId], references: [id])
+  
+  cellId    String?
+  cell      Cell?    @relation(fields: [cellId], references: [id])
+  
+  sectorId  String?
+  sector    Sector?  @relation(fields: [sectorId], references: [id])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  subject   String
+  content   String
+  status    String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  createdAt DateTime @default(now())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+}
