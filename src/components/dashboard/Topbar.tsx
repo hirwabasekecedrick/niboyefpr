@@ -2,6 +2,7 @@
 
 import { signOut } from 'next-auth/react'
 import { LogOut, User as UserIcon, Bell } from 'lucide-react'
+import { NotificationCenter } from './notifications/NotificationCenter'
 
 export function Topbar({ user }: { user: any }) {
     return (
@@ -16,20 +17,17 @@ export function Topbar({ user }: { user: any }) {
             </div>
 
             <div className="flex items-center gap-4">
-                <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors relative">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
-                </button>
+                <NotificationCenter />
 
                 <div className="h-6 w-px bg-slate-200"></div>
 
                 <div className="flex items-center gap-3">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-slate-700">{user?.name}</p>
-                        <p className="text-xs text-slate-500 capitalize">{user?.role?.replace('_', ' ').toLowerCase()}</p>
+                        <p className="text-sm font-bold text-slate-700">{user?.name}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{user?.role?.replace('_', ' ')}</p>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-primary border border-red-200">
-                        <UserIcon className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-primary border border-red-100 shadow-sm">
+                        <UserIcon className="w-5 h-5" />
                     </div>
 
                     <button

@@ -32,6 +32,7 @@ export function Sidebar({ role }: { role: string }) {
         { name: 'Announcements', href: '/dashboard/announcements', icon: Megaphone, roles: ['MEMBER', 'VILLAGE_LEADER', 'CELL_ADMIN', 'SECTOR_ADMIN'] },
         { name: 'Feedback & Issues', href: '/dashboard/feedback', icon: MessageSquare, roles: ['MEMBER', 'VILLAGE_LEADER', 'CELL_ADMIN', 'SECTOR_ADMIN'] },
         { name: 'Reports', href: '/dashboard/reports', icon: FileText, roles: ['VILLAGE_LEADER', 'CELL_ADMIN', 'SECTOR_ADMIN'] },
+        { name: 'Automated Reports', href: '/dashboard/reports/automated', icon: ShieldCheck, roles: ['CELL_ADMIN', 'SECTOR_ADMIN'] },
 
         // System Settings for Sector Admin
         { name: 'System Settings', href: '/dashboard/settings', icon: ShieldCheck, roles: ['SECTOR_ADMIN'] },
@@ -55,8 +56,8 @@ export function Sidebar({ role }: { role: string }) {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${isActive
-                                    ? 'bg-primary text-white shadow-sm'
-                                    : 'text-slate-600 hover:bg-red-50 hover:text-primary'
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-red-50 hover:text-primary'
                                 }`}
                         >
                             <item.icon className={`w-4 h-4 ${isActive ? 'text-red-100' : 'text-slate-400'}`} />

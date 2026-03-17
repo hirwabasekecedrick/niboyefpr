@@ -45,7 +45,7 @@ export default async function ActivitiesPage() {
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${act.level === 'SECTOR' ? 'bg-red-100 text-primary' :
-                                                        act.level === 'CELL' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                                                    act.level === 'CELL' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
                                                     }`}>
                                                     {act.level} Level
                                                 </span>
@@ -57,7 +57,7 @@ export default async function ActivitiesPage() {
 
                                     <div className="flex items-center gap-4 border-t md:border-t-0 pt-4 md:pt-0">
                                         <div className="text-center px-4">
-                                            <p className="text-sm font-bold text-slate-800">{act._count.attendances}</p>
+                                            <p className="text-sm font-bold text-slate-800">{(act as any)._count.attendances}</p>
                                             <p className="text-[10px] text-slate-400 uppercase font-medium">Attended</p>
                                         </div>
                                         <div className="bg-slate-100 p-2 rounded-lg">

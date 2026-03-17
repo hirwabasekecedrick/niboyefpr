@@ -17,7 +17,7 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
         where: { id: activityId },
         include: {
             author: { select: { name: true, role: true } }
-        }
+        } as any
     });
 
     if (!activity) redirect("/dashboard/activities");
@@ -76,7 +76,7 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
                             </div>
                         </div>
                         <div className="mt-6 pt-6 border-t border-slate-50">
-                            <p className="text-xs text-slate-400 italic">Created by {activity.author.name} ({activity.author.role.toLowerCase().replace('_', ' ')})</p>
+                            <p className="text-xs text-slate-400 italic">Created by {(activity as any).author.name} ({(activity as any).author.role.toLowerCase().replace('_', ' ')})</p>
                         </div>
                     </div>
 
