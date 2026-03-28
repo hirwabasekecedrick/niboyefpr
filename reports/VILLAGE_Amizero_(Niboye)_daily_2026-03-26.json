@@ -1,0 +1,15 @@
+{
+  "id": "village-c7009f7c-84e0-4fd2-9ee8-5ab4b3a00a8c-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.487Z",
+  "scopeId": "c7009f7c-84e0-4fd2-9ee8-5ab4b3a00a8c",
+  "scopeName": "Amizero (Niboye)",
+  "cellId": "d0ff6e08-14b8-433c-a845-04b8498e67e1",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 0,
+    "totalActivities": 0,
+    "totalContributions": 0
+  }
+}

@@ -1,62 +1,100 @@
 import { PrismaClient } from '@prisma/client'
-
+import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-    // Check if Sector already exists
-    let sector = await prisma.sector.findUnique({
-        where: { name: 'Niboye' }
-    })
-
+    const passwordHash = await bcrypt.hash('password123', 10);
+    // 1. Ensure Niboye Sector exists
+    let sector = await prisma.sector.findUnique({ where: { name: 'Niboye' } })
     if (!sector) {
-        // 1. Create Niboye Sector
-        sector = await prisma.sector.create({
-            data: {
-                name: 'Niboye',
-            }
+        sector = await prisma.sector.create({ data: { name: 'Niboye' } })
+    }
+    console.log(`Sector: ${sector.name}`)
+
+    // 2. Ensure Cells and Villages exist
+    const cellNames = ['Gatare', 'Niboye', 'Nyakabanda']
+    for (const cName of cellNames) {
+        let cell = await prisma.cell.findFirst({
+            where: { name: cName, sectorId: sector.id }
         })
-
-        console.log(`Created Sector: ${sector.name}`)
-
-        // 2. Create Cells
-        const cellNames = ['Gatare', 'Niboye', 'Nyakabanda']
-        for (const cName of cellNames) {
-            const cell = await prisma.cell.create({
-                data: {
-                    name: cName,
-                    sectorId: sector.id
-                }
+        if (!cell) {
+            cell = await prisma.cell.create({
+                data: { name: cName, sectorId: sector.id }
             })
-            console.log(`Created Cell: ${cell.name}`)
+        }
+        console.log(`Cell: ${cell.name}`)
 
-            // 3. Create Sample Villages for each Cell
-            const villageNames = [`Amizero (${cName})`, `Ubumwe (${cName})`, `Intwari (${cName})`]
-            for (const vName of villageNames) {
+        const villageNames = [`Amizero (${cName})`, `Ubumwe (${cName})`, `Intwari (${cName})`]
+        for (const vName of villageNames) {
+            const village = await prisma.village.findFirst({
+                where: { name: vName, cellId: cell.id }
+            })
+            if (!village) {
                 await prisma.village.create({
-                    data: {
-                        name: vName,
-                        cellId: cell.id
-                    }
+                    data: { name: vName, cellId: cell.id }
                 })
-                console.log(`  - Created Village: ${vName}`)
             }
         }
+    }
 
-        // 4. Create a default Sector Admin (Password: password123)
-        await prisma.user.create({
-            data: {
-                nationalId: '1199080000000000',
-                name: 'Admin Niboye',
-                phone: '0780000000',
-                passwordHash: '$2b$10$EP/YgM7t3wQBx0mQInXvTu5pYIuJHzOQYq6lSXXW5M8dOQc6Z0uHq', // 'password123' bcrypt hash
-                role: 'SECTOR_ADMIN',
+    const nyakabandaCell = await prisma.cell.findFirst({ where: { name: 'Nyakabanda', sectorId: sector.id } });
+
+    // 4. Create a default Sector Admin (Password: password123)
+    await prisma.user.upsert({
+        where: { nationalId: '1199080000000000' },
+        update: { passwordHash: passwordHash },
+        create: {
+            nationalId: '1199080000000000',
+            name: 'Admin Niboye',
+            phone: '0780000000',
+            passwordHash: passwordHash,
+            role: 'SECTOR_ADMIN',
+            isVerified: true,
+            sectorId: sector.id
+        }
+    })
+    console.log('Ensured Default Sector Admin exists.')
+
+    // 5. Create a default Cell Admin (Password: password123)
+    if (nyakabandaCell) {
+        await prisma.user.upsert({
+            where: { nationalId: '1199080000000001' },
+            update: { passwordHash: passwordHash },
+            create: {
+                nationalId: '1199080000000001',
+                name: 'Admin Nyakabanda',
+                phone: '0780000001',
+                passwordHash: passwordHash,
+                role: 'CELL_ADMIN',
                 isVerified: true,
-                sectorId: sector.id
+                sectorId: sector.id,
+                cellId: nyakabandaCell.id
             }
         })
-        console.log('Created Default Sector Admin. ID: 1199080000000000, Pass: password123')
-    } else {
-        console.log('Seed data already exists.')
+        console.log('Ensured Default Cell Admin (Nyakabanda) exists.')
+
+        const amizeroVillage = await prisma.village.findFirst({
+            where: { name: 'Amizero (Nyakabanda)', cellId: nyakabandaCell.id }
+        })
+
+        if (amizeroVillage) {
+            await prisma.user.upsert({
+                where: { nationalId: '1199080000000002' },
+                update: { passwordHash: passwordHash },
+                create: {
+                    nationalId: '1199080000000002',
+                    name: 'Leader Amizero',
+                    phone: '0780000002',
+                    passwordHash: passwordHash,
+                    role: 'VILLAGE_LEADER',
+                    isVerified: true,
+                    sectorId: sector.id,
+                    cellId: nyakabandaCell.id,
+                    villageId: amizeroVillage.id
+                }
+            })
+            console.log('Ensured Default Village Leader (Amizero) exists.')
+        }
     }
 }
 

@@ -7,13 +7,14 @@ export async function getSystemStats() {
         const totalMembers = await prisma.user.count({ where: { role: 'MEMBER' } })
         const totalVillages = await prisma.village.count()
         const totalCells = await prisma.cell.count()
-        const totalContribution = await prisma.contribution.aggregate({
-            _sum: { amount: true }
+        const totalActivities = await prisma.activity.count()
+        const totalParticipation = await prisma.attendance.count({
+            where: { status: 'PRESENT' }
         })
 
-        const contributionsByMonth = await prisma.contribution.groupBy({
+        const activitiesByMonth = await prisma.activity.groupBy({
             by: ['date'],
-            _sum: { amount: true },
+            _count: { id: true },
             orderBy: { date: 'asc' },
             take: 6
         })
@@ -22,10 +23,11 @@ export async function getSystemStats() {
             totalMembers,
             totalVillages,
             totalCells,
-            totalContributionRwf: totalContribution._sum.amount || 0,
-            monthlyData: contributionsByMonth.map(item => ({
+            totalActivities,
+            totalParticipation,
+            monthlyData: activitiesByMonth.map(item => ({
                 month: new Date(item.date).toLocaleString('default', { month: 'short' }),
-                amount: item._sum.amount || 0
+                count: item._count.id || 0
             }))
         }
     } catch (error) {
@@ -39,28 +41,29 @@ export async function getVillageGrading() {
         const villages = await prisma.village.findMany({
             include: {
                 users: {
-                    include: { attendances: true, contributions: true }
+                    include: { attendances: true }
                 }
             }
         })
 
         return villages.map(v => {
             const memberCount = v.users.length
-            const totalContribution = v.users.reduce((sum, u) => sum + u.contributions.reduce((us, c) => us + c.amount, 0), 0)
+            const totalAttendances = v.users.reduce((sum, u) => sum + u.attendances.length, 0)
+            const attendanceRate = memberCount > 0 ? (totalAttendances / memberCount) * 100 : 0
 
-            // Basic grading logic
+            // Participation-based grading
             let grade = 'C'
-            if (totalContribution > 500000) grade = 'A'
-            else if (totalContribution > 200000) grade = 'B'
+            if (attendanceRate > 80) grade = 'A'
+            else if (attendanceRate > 50) grade = 'B'
 
             return {
                 id: v.id,
                 name: v.name,
                 memberCount,
-                totalContribution,
+                attendanceRate: Math.round(attendanceRate),
                 grade
             }
-        }).sort((a, b) => b.totalContribution - a.totalContribution)
+        }).sort((a, b) => b.attendanceRate - a.attendanceRate)
     } catch (error) {
         console.error('Error calculating grading:', error)
         return []

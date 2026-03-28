@@ -7,6 +7,165 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Sector {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  cells   Cell[]
+  reports Report[]
+  users   User[]
+}
+
+model Cell {
+  id       String    @id @default(uuid())
+  name     String
+  sectorId String
+  sector   Sector    @relation(fields: [sectorId], references: [id])
+  reports  Report[]
+  users    User[]
+  villages Village[]
+}
+
+model Village {
+  id      String   @id @default(uuid())
+  name    String
+  cellId  String
+  reports Report[]
+  users   User[]
+  cell    Cell     @relation(fields: [cellId], references: [id])
+}
+
+model User {
+  id                    String              @id @default(uuid())
+  nationalId            String              @unique
+  name                  String
+  phone                 String
+  passwordHash          String
+  role                  Role                @default(MEMBER)
+  isVerified            Boolean             @default(false)
+  villageId             String?
+  cellId                String?
+  sectorId              String?
+  lastSeen              DateTime?
+  createdActivities     Activity[]
+  createdAnnouncements  Announcement[]
+  attendances           Attendance[]
+  contributions         Contribution[]      @relation("MemberContributions")
+  recordedContributions Contribution[]      @relation("RecordedContributions")
+  eventRegistrations    EventRegistration[]
+  feedbacks             Feedback[]
+  notifications         Notification[]
+  reports               Report[]            @relation("ReportAuthor")
+  cell                  Cell?               @relation(fields: [cellId], references: [id])
+  sector                Sector?             @relation(fields: [sectorId], references: [id])
+  village               Village?            @relation(fields: [villageId], references: [id])
+}
+
+model Activity {
+  id            String              @id @default(uuid())
+  title         String
+  description   String
+  level         Level
+  date          DateTime
+  startTime     String?
+  authorId      String
+  isOnline      Boolean             @default(false)
+  location      String?
+  onlineLink    String?
+  author        User                @relation(fields: [authorId], references: [id])
+  attendances   Attendance[]
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id           String   @id @default(uuid())
+  userId       String
+  activityId   String
+  registeredAt DateTime @default(now())
+  activity     Activity @relation(fields: [activityId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, activityId])
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  userId      String
+  activityId  String
+  status      String   @default("PRESENT")
+  isConfirmed Boolean  @default(false)
+  confirmedBy String?
+  date        DateTime @default(now())
+  activity    Activity @relation(fields: [activityId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, activityId])
+}
+
+model Announcement {
+  id              String   @id @default(uuid())
+  title           String
+  content         String
+  level           Level
+  createdAt       DateTime @default(now())
+  authorId        String
+  targetCellId    String?
+  targetRole      String?
+  targetVillageId String?
+  author          User     @relation(fields: [authorId], references: [id])
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  imageUrl  String?
+  level     Level
+  createdAt DateTime @default(now())
+  authorId  String
+  villageId String?
+  cellId    String?
+  sectorId  String?
+  author    User     @relation("ReportAuthor", fields: [authorId], references: [id])
+  cell      Cell?    @relation(fields: [cellId], references: [id])
+  sector    Sector?  @relation(fields: [sectorId], references: [id])
+  village   Village? @relation(fields: [villageId], references: [id])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  subject   String
+  content   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  type      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Contribution {
+  id           String   @id @default(uuid())
+  amount       Float
+  date         DateTime @default(now())
+  memberId     String
+  recordedById String
+  level        Level
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  description  String?
+  member       User     @relation("MemberContributions", fields: [memberId], references: [id])
+  recordedBy   User     @relation("RecordedContributions", fields: [recordedById], references: [id])
+}
+
 enum Role {
   MEMBER
   VILLAGE_LEADER
@@ -18,155 +177,4 @@ enum Level {
   VILLAGE
   CELL
   SECTOR
-}
-
-model Sector {
-  id      String   @id @default(uuid())
-  name    String   @unique
-  cells   Cell[]
-  users   User[]
-  reports Report[]
-}
-
-model Cell {
-  id       String    @id @default(uuid())
-  name     String
-  sectorId String
-  sector   Sector    @relation(fields: [sectorId], references: [id])
-  villages Village[]
-  users    User[]
-  reports  Report[]
-}
-
-model Village {
-  id      String   @id @default(uuid())
-  name    String
-  cellId  String
-  cell    Cell     @relation(fields: [cellId], references: [id])
-  users   User[]
-  reports Report[]
-}
-
-model User {
-  id            String         @id @default(uuid())
-  nationalId    String         @unique
-  name          String
-  phone         String
-  passwordHash  String
-  role          Role           @default(MEMBER)
-  isVerified    Boolean        @default(false) // Data Verification by Cell Admins
-  
-  villageId     String?
-  village       Village?       @relation(fields: [villageId], references: [id])
-  
-  cellId        String?
-  cell          Cell?          @relation(fields: [cellId], references: [id])
-  
-  sectorId      String?
-  sector        Sector?        @relation(fields: [sectorId], references: [id])
-
-  attendances        Attendance[]
-  eventRegistrations EventRegistration[]
-  contributions      Contribution[]
-  createdAnnouncements Announcement[]
-  createdActivities  Activity[]
-  reports            Report[]      @relation("ReportAuthor")
-  feedbacks          Feedback[]
-  notifications      Notification[]
-}
-
-model Activity {
-  id            String              @id @default(uuid())
-  title         String
-  description   String
-  level         Level
-  date          DateTime
-  attendances   Attendance[]
-  registrations EventRegistration[]
-  authorId      String
-  author        User                @relation(fields: [authorId], references: [id])
-}
-
-model EventRegistration {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  activityId   String
-  activity     Activity @relation(fields: [activityId], references: [id])
-  registeredAt DateTime @default(now())
-
-  @@unique([userId, activityId])
-}
-
-model Attendance {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  activityId String
-  activity   Activity @relation(fields: [activityId], references: [id])
-  status     String   @default("PRESENT") // PRESENT, ABSENT, EXCUSED
-  date       DateTime @default(now())
-
-  @@unique([userId, activityId])
-}
-
-model Contribution {
-  id           String   @id @default(uuid())
-  amount       Float
-  date         DateTime @default(now())
-  memberId     String
-  member       User     @relation(fields: [memberId], references: [id])
-  recordedById String
-}
-
-model Announcement {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  level       Level
-  createdAt   DateTime @default(now())
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id])
-}
-
-model Report {
-  id        String   @id @default(uuid())
-  title     String
-  content   String
-  imageUrl  String?  // For village leaders to insert images
-  level     Level
-  createdAt DateTime @default(now())
-  
-  authorId  String
-  author    User     @relation("ReportAuthor", fields: [authorId], references: [id])
-  
-  villageId String?
-  village   Village? @relation(fields: [villageId], references: [id])
-  
-  cellId    String?
-  cell      Cell?    @relation(fields: [cellId], references: [id])
-  
-  sectorId  String?
-  sector    Sector?  @relation(fields: [sectorId], references: [id])
-}
-
-model Feedback {
-  id        String   @id @default(uuid())
-  subject   String
-  content   String
-  status    String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
-  createdAt DateTime @default(now())
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  type      String   // INFO, WARNING, SUCCESS
-  createdAt DateTime @default(now())
 }

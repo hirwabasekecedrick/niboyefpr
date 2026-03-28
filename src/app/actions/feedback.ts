@@ -10,13 +10,15 @@ export async function submitFeedback(formData: FormData) {
         const session = await getServerSession(authOptions)
         if (!session?.user) return { success: false, error: 'Unauthorized' }
 
-        const message = formData.get('message') as string
+        const subject = formData.get('subject') as string
+        const content = formData.get('content') as string
 
-        if (!message) return { success: false, error: 'Message is required' }
+        if (!subject || !content) return { success: false, error: 'Subject and content are required' }
 
         await prisma.feedback.create({
             data: {
-                message,
+                subject,
+                content,
                 authorId: session.user.id,
             },
         })

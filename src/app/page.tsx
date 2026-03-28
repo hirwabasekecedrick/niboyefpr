@@ -5,15 +5,15 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b border-red-100 bg-white shadow-sm">
-        <Link className="flex items-center justify-center font-bold text-xl tracking-tight text-primary gap-2" href="#">
+        <Link className="flex items-center justify-center font-bold text-xl tracking-tight text-primary gap-2" href="/">
           <ShieldCheck className="h-6 w-6 text-primary" />
           <span>Niboye Sector FPR</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:text-primary transition-colors text-foreground" href="#">
+          <Link className="text-sm font-medium hover:text-primary transition-colors text-foreground" href="/features">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:text-primary transition-colors text-foreground" href="#">
+          <Link className="text-sm font-medium hover:text-primary transition-colors text-foreground" href="/about">
             About
           </Link>
           <Link
@@ -70,7 +70,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold">Data-Driven Insights</h3>
                 <p className="text-sm text-slate-600">
-                  Track member participation, attendance records, contributions, and activity performance.
+                  Track member participation, attendance records, and activity performance.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 text-center p-6 rounded-2xl border border-red-50 bg-white shadow-sm hover:shadow-md transition-shadow lg:col-start-2 lg:col-span-1 sm:col-span-2">
@@ -91,10 +91,10 @@ export default function Home() {
           © 2026 FPR Inkotanyi Management System (Niboye Sector). All rights reserved.
         </p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:text-primary transition-colors text-slate-500" href="#">
+          <Link className="text-xs hover:text-primary transition-colors text-slate-500" href="/terms">
             Terms of Service
           </Link>
-          <Link className="text-xs hover:text-primary transition-colors text-slate-500" href="#">
+          <Link className="text-xs hover:text-primary transition-colors text-slate-500" href="/privacy">
             Privacy
           </Link>
         </nav>

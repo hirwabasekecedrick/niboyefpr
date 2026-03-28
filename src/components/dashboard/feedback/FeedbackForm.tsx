@@ -37,9 +37,18 @@ export function FeedbackForm() {
 
             <form onSubmit={onSubmit} className="space-y-4">
                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                    <input
+                        name="subject"
+                        required
+                        className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                        placeholder="Brief title of your feedback"
+                    />
+                </div>
+                <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Your Message</label>
                     <textarea
-                        name="message"
+                        name="content"
                         required
                         rows={5}
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"

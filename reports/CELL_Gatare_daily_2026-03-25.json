@@ -1,0 +1,14 @@
+{
+  "id": "cell-191249bf-1082-4473-8344-599b56bb0180-daily-2026-03-25",
+  "level": "CELL",
+  "frequency": "daily",
+  "date": "2026-03-25T20:19:36.500Z",
+  "scopeId": "191249bf-1082-4473-8344-599b56bb0180",
+  "scopeName": "Gatare",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 1,
+    "totalActivities": 0,
+    "totalContributions": 1000
+  }
+}

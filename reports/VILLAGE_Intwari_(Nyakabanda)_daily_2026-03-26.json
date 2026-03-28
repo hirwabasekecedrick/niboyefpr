@@ -1,0 +1,15 @@
+{
+  "id": "village-c4f2cc69-a7d8-4817-8858-4092f0639037-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.525Z",
+  "scopeId": "c4f2cc69-a7d8-4817-8858-4092f0639037",
+  "scopeName": "Intwari (Nyakabanda)",
+  "cellId": "d53ea159-db1a-4ec7-b7d3-5b9bbf53b882",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 0,
+    "totalActivities": 0,
+    "totalContributions": 0
+  }
+}

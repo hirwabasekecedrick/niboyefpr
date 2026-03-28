@@ -30,6 +30,12 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+                console.log('Auth Debug:', {
+                    providedId: credentials.nationalId,
+                    userFound: !!user,
+                    role: user?.role,
+                    isValid
+                });
 
                 if (!isValid) {
                     throw new Error("Invalid password");

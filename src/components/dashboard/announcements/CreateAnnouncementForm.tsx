@@ -12,12 +12,16 @@ export function CreateAnnouncementForm({ userRole }: { userRole: string }) {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
 
-        // Set level based on role if not provided
-        let level = 'VILLAGE'
-        if (userRole === 'SECTOR_ADMIN') level = 'SECTOR'
-        else if (userRole === 'CELL_ADMIN') level = 'CELL'
+        const selectedLevel = formData.get('level') as string;
 
-        formData.append('level', level)
+        // Set level based on role if not provided or overridden
+        let level = selectedLevel;
+        if (!level) {
+            level = 'VILLAGE';
+            if (userRole === 'SECTOR_ADMIN') level = 'SECTOR';
+            else if (userRole === 'CELL_ADMIN') level = 'CELL';
+            formData.append('level', level);
+        }
 
         startTransition(async () => {
             const res = await createAnnouncement(formData)
@@ -45,6 +49,34 @@ export function CreateAnnouncementForm({ userRole }: { userRole: string }) {
                         placeholder="Announcement title"
                     />
                 </div>
+                {['SECTOR_ADMIN', 'CELL_ADMIN'].includes(userRole) && (
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Target Level</label>
+                            <select
+                                name="level"
+                                required
+                                className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm bg-white"
+                            >
+                                {userRole === 'SECTOR_ADMIN' && <option value="SECTOR">All Sector (Everyone)</option>}
+                                <option value="CELL">Cell Level (Cell Admins & Below)</option>
+                                <option value="VILLAGE">Village Level (Village Leaders & Members)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Target Audience (Role)</label>
+                            <select
+                                name="targetRole"
+                                className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm bg-white"
+                            >
+                                <option value="">All Roles</option>
+                                {userRole === 'SECTOR_ADMIN' && <option value="CELL_ADMIN">Cell Admins Only</option>}
+                                {['SECTOR_ADMIN', 'CELL_ADMIN'].includes(userRole) && <option value="VILLAGE_LEADER">Village Leaders Only</option>}
+                                <option value="MEMBER">Regular Members Only</option>
+                            </select>
+                        </div>
+                    </>
+                )}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
                     <textarea

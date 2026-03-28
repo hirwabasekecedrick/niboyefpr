@@ -1,0 +1,15 @@
+{
+  "id": "village-4c2a7353-247e-4ebb-8483-273ecba9e543-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.504Z",
+  "scopeId": "4c2a7353-247e-4ebb-8483-273ecba9e543",
+  "scopeName": "Intwari (Niboye)",
+  "cellId": "d0ff6e08-14b8-433c-a845-04b8498e67e1",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 0,
+    "totalActivities": 0,
+    "totalContributions": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "cell-d53ea159-db1a-4ec7-b7d3-5b9bbf53b882-daily-2026-03-26",
+  "level": "CELL",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.444Z",
+  "scopeId": "d53ea159-db1a-4ec7-b7d3-5b9bbf53b882",
+  "scopeName": "Nyakabanda",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 1,
+    "totalActivities": 0,
+    "totalContributions": 10000
+  }
+}

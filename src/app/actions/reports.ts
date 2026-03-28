@@ -3,8 +3,6 @@
 import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { revalidatePath } from 'next/cache'
 
 export async function submitReport(formData: FormData) {
@@ -21,6 +19,9 @@ export async function submitReport(formData: FormData) {
         if (image && image.size > 0) {
             const bytes = await image.arrayBuffer()
             const buffer = Buffer.from(bytes)
+
+            const { mkdir, writeFile } = await import('fs/promises')
+            const path = (await import('path')).default
 
             const uploadDir = path.join(process.cwd(), 'public', 'uploads')
             await mkdir(uploadDir, { recursive: true })
@@ -60,14 +61,28 @@ export async function getReports() {
         const session = await getServerSession(authOptions)
         if (!session?.user) return []
 
+        const { id, role, villageId, cellId, sectorId } = session.user as any
+        const where: any = {}
+
+        if (role === 'VILLAGE_LEADER') {
+            where.OR = [
+                { authorId: id },
+                { villageId: villageId }
+            ]
+        } else if (role === 'CELL_ADMIN') {
+            where.OR = [
+                { authorId: id },
+                { cellId: cellId }
+            ]
+        } else if (role === 'SECTOR_ADMIN') {
+            where.sectorId = sectorId
+        } else {
+            // Members see only their own reports
+            where.authorId = id
+        }
+
         return await prisma.report.findMany({
-            where: {
-                OR: [
-                    { authorId: session.user.id }, // My reports
-                    { cellId: session.user.cellId }, // Reports in my cell
-                    { sectorId: session.user.sectorId } // Reports in my sector
-                ]
-            },
+            where,
             orderBy: { createdAt: 'desc' },
             include: {
                 author: { select: { name: true, role: true } },

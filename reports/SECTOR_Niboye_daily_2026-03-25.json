@@ -1,0 +1,13 @@
+{
+  "id": "sector-13dc94d5-bf62-454e-a433-dad0f8e2d9ac-daily-2026-03-25",
+  "level": "SECTOR",
+  "frequency": "daily",
+  "date": "2026-03-25T20:19:36.496Z",
+  "scopeId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "scopeName": "Niboye",
+  "metrics": {
+    "totalMembers": 1,
+    "totalActivities": 0,
+    "totalContributions": 1000
+  }
+}

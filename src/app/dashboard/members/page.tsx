@@ -10,19 +10,8 @@ export default async function MembersPage() {
         redirect("/login");
     }
 
-    // Ensure only Cell Admins or Sector Admins can access full member management for now.
     if (!['CELL_ADMIN', 'SECTOR_ADMIN', 'VILLAGE_LEADER'].includes(session.user.role)) {
         redirect("/dashboard");
-    }
-
-    // To simplify for Phase 1 verification, we fetch members based on the user's role/cell.
-    // Sector Admins would theoretically see everything, Village Leaders just their village. 
-    // Let's pass the cell Id to simulate the "Cell Administrator" task.
-
-    const cellId = session.user.cellId;
-
-    if (!cellId && session.user.role === 'CELL_ADMIN') {
-        return <div className="p-6 text-red-500">Error: Administrator is not assigned to a Cell.</div>;
     }
 
     return (
@@ -32,11 +21,16 @@ export default async function MembersPage() {
                     Member Management
                 </h1>
                 <p className="text-slate-500">
-                    Review member registrations and perform data verification.
+                    Review member registrations, verify data, and manage your jurisdiction.
                 </p>
             </div>
 
-            <MemberManagementClient cellId={cellId || ''} />
+            <MemberManagementClient
+                cellId={session.user.cellId || undefined}
+                sectorId={session.user.sectorId || undefined}
+                villageId={session.user.villageId || undefined}
+                currentUserRole={session.user.role}
+            />
         </div>
     );
 }

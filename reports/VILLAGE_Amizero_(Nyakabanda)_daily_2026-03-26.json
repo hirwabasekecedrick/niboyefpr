@@ -1,0 +1,15 @@
+{
+  "id": "village-530c19bf-62a7-4ba6-adec-59c6ebaa6278-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.510Z",
+  "scopeId": "530c19bf-62a7-4ba6-adec-59c6ebaa6278",
+  "scopeName": "Amizero (Nyakabanda)",
+  "cellId": "d53ea159-db1a-4ec7-b7d3-5b9bbf53b882",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 1,
+    "totalActivities": 0,
+    "totalContributions": 10000
+  }
+}

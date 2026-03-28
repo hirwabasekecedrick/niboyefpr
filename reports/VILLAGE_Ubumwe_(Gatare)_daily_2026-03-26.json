@@ -1,0 +1,15 @@
+{
+  "id": "village-cd3b92ab-9407-48fe-be25-228313c3761b-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.468Z",
+  "scopeId": "cd3b92ab-9407-48fe-be25-228313c3761b",
+  "scopeName": "Ubumwe (Gatare)",
+  "cellId": "191249bf-1082-4473-8344-599b56bb0180",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 0,
+    "totalActivities": 0,
+    "totalContributions": 0
+  }
+}

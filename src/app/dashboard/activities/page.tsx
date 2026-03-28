@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getActivities } from "@/app/actions/activities"
 import { CreateActivityCard } from "@/components/dashboard/activities/CreateActivityCard"
-import { Calendar, Users } from "lucide-react"
+import { Calendar, Users, Clock } from "lucide-react"
 import Link from "next/link"
 
 export default async function ActivitiesPage() {
@@ -49,6 +49,12 @@ export default async function ActivitiesPage() {
                                                     }`}>
                                                     {act.level} Level
                                                 </span>
+                                                {(act as any).startTime && (
+                                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-wider">
+                                                        <Clock className="w-3 h-3" />
+                                                        {(act as any).startTime}
+                                                    </span>
+                                                )}
                                             </div>
                                             <h3 className="text-lg font-bold text-slate-800 mt-1">{act.title}</h3>
                                             <p className="text-slate-500 text-sm line-clamp-1">{act.description}</p>

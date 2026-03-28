@@ -30,7 +30,8 @@ export default async function FeedbackPage() {
                     ) : (
                         feedbacks.map((item) => (
                             <div key={item.id} className="bg-white p-6 rounded-xl border border-red-50 shadow-sm hover:border-red-200 transition-colors">
-                                <p className="text-slate-700 text-sm leading-relaxed mb-4">{item.message}</p>
+                                <h3 className="text-sm font-bold text-slate-800 mb-1">{item.subject}</h3>
+                                <p className="text-slate-600 text-sm leading-relaxed mb-4">{item.content}</p>
                                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-500">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">

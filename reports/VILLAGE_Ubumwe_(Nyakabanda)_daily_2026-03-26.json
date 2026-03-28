@@ -1,0 +1,15 @@
+{
+  "id": "village-01a2c4bc-0421-41b3-ad25-64a1ccf5c9b6-daily-2026-03-26",
+  "level": "VILLAGE",
+  "frequency": "daily",
+  "date": "2026-03-26T17:44:53.519Z",
+  "scopeId": "01a2c4bc-0421-41b3-ad25-64a1ccf5c9b6",
+  "scopeName": "Ubumwe (Nyakabanda)",
+  "cellId": "d53ea159-db1a-4ec7-b7d3-5b9bbf53b882",
+  "sectorId": "13dc94d5-bf62-454e-a433-dad0f8e2d9ac",
+  "metrics": {
+    "totalMembers": 0,
+    "totalActivities": 0,
+    "totalContributions": 0
+  }
+}

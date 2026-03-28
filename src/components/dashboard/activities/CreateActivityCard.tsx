@@ -6,16 +6,19 @@ import { Calendar, Loader2, Info } from 'lucide-react'
 
 export function CreateActivityCard({ userRole }: { userRole: string }) {
     const [isPending, startTransition] = useTransition()
+    const [isOnline, setIsOnline] = useState(false)
     const [error, setError] = useState('')
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
+        formData.set('isOnline', isOnline.toString())
 
         startTransition(async () => {
             const res = await createActivity(formData)
             if (res.success) {
                 ; (e.target as HTMLFormElement).reset()
+                setIsOnline(false)
             } else {
                 setError(res.error || 'Failed to create activity')
             }
@@ -39,12 +42,21 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                         <input
                             name="date"
                             type="date"
+                            required
+                            className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Start Time</label>
+                        <input
+                            name="startTime"
+                            type="time"
                             required
                             className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
                         />
@@ -60,6 +72,40 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                             <option value="SECTOR">Sector</option>
                         </select>
                     </div>
+                </div>
+
+                <div className="space-y-4 pt-2 border-t border-slate-50">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="isOnline"
+                            checked={isOnline}
+                            onChange={(e) => setIsOnline(e.target.checked)}
+                            className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                        />
+                        <label htmlFor="isOnline" className="text-sm font-medium text-slate-700">This is an Online Activity</label>
+                    </div>
+
+                    {!isOnline ? (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Physical Location</label>
+                            <input
+                                name="location"
+                                className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                                placeholder="e.g. Village Office, Community Center"
+                            />
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Meeting Link</label>
+                            <input
+                                name="onlineLink"
+                                type="url"
+                                className="w-full h-10 px-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                                placeholder="https://zoom.us/j/..."
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div>

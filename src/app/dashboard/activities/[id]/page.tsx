@@ -4,14 +4,18 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { AttendanceTracker } from "@/components/dashboard/activities/AttendanceTracker";
 import { getVillageMembers } from "@/app/actions/village-leader";
-import { getAttendancesForActivity } from "@/app/actions/activities";
-import { Calendar, MapPin, Info } from "lucide-react";
+import { getAttendancesForActivity, getExpectedAttendees } from "@/app/actions/activities";
+import { Calendar, MapPin, Info, CheckCircle2, Users, Laptop, ExternalLink, Clock } from "lucide-react";
+import { EventRegistration } from "@/components/dashboard/activities/EventRegistration";
+import { EventQRCode } from "@/components/dashboard/activities/EventQRCode";
+import { QRScanner } from "@/components/dashboard/activities/QRScanner";
 
-export default async function ActivityDetailPage({ params }: { params: { id: string } }) {
+export default async function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) redirect("/login");
     //Params to get the activity id
-    const activityId = params.id;
+    const resolvedParams = await params;
+    const activityId = resolvedParams.id;
 
     const activity = await prisma.activity.findUnique({
         where: { id: activityId },
@@ -22,25 +26,26 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
 
     if (!activity) redirect("/dashboard/activities");
 
-    // Fetch relevant members for attendance based on level
-    // Simplified logic: If village level, get village members. If cell, get cell members.
+    // Fetch expected members
     let members = [];
     if (activity.level === 'VILLAGE') {
+        // For Villages, it's small enough to show the full register.
         members = await getVillageMembers(session.user.villageId || '');
-    } else if (activity.level === 'CELL') {
-        members = await prisma.user.findMany({
-            where: { cellId: session.user.cellId, role: 'MEMBER' },
-            orderBy: { name: 'asc' }
-        });
     } else {
-        members = await prisma.user.findMany({
-            where: { sectorId: session.user.sectorId, role: 'MEMBER' },
-            orderBy: { name: 'asc' },
-            take: 50 // Limit for performance in this demo
-        });
+        // For Cell/Sector, only fetch those who registered or already have attendance marked
+        members = await getExpectedAttendees(activityId);
     }
 
     const initialAttendances = await getAttendancesForActivity(activityId);
+
+    const isMember = session.user.role === 'MEMBER';
+    const isRegistered = await prisma.eventRegistration.findUnique({
+        where: { userId_activityId: { userId: session.user.id, activityId } }
+    }) !== null;
+
+    const registrationCount = await prisma.eventRegistration.count({
+        where: { activityId }
+    });
 
     return (
         <div className="space-y-6">
@@ -56,6 +61,12 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
                             <Calendar className="w-3 h-3" />
                             {new Date(activity.date).toLocaleDateString()}
                         </span>
+                        {(activity as any).startTime && (
+                            <span className="text-xs text-slate-400 flex items-center gap-1 font-medium border-l border-slate-200 pl-2">
+                                <Clock className="w-3 h-3" />
+                                {(activity as any).startTime}
+                            </span>
+                        )}
                     </div>
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{activity.title}</h1>
                 </div>
@@ -70,32 +81,95 @@ export default async function ActivityDetailPage({ params }: { params: { id: str
                                 <Info className="w-5 h-5 text-primary shrink-0" />
                                 <p className="text-sm text-slate-600 leading-relaxed">{activity.description || 'No description provided.'}</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <MapPin className="w-5 h-5 text-primary shrink-0" />
-                                <p className="text-sm text-slate-600">Location: {activity.level} jurisdiction</p>
-                            </div>
+                            {(activity as any).isOnline ? (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-3">
+                                        <Laptop className="w-5 h-5 text-primary shrink-0" />
+                                        <p className="text-sm font-bold text-slate-800">Online Activity</p>
+                                    </div>
+                                    {(activity as any).onlineLink && (
+                                        <a
+                                            href={(activity as any).onlineLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-8 text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                        >
+                                            <ExternalLink className="w-3 h-3" />
+                                            Join Meeting
+                                        </a>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <MapPin className="w-5 h-5 text-primary shrink-0" />
+                                    <p className="text-sm text-slate-600">
+                                        Location: <span className="font-semibold text-slate-800">{(activity as any).location || `${activity.level} jurisdiction`}</span>
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         <div className="mt-6 pt-6 border-t border-slate-50">
                             <p className="text-xs text-slate-400 italic">Created by {(activity as any).author.name} ({(activity as any).author.role.toLowerCase().replace('_', ' ')})</p>
                         </div>
                     </div>
 
-                    <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
-                        <h3 className="text-primary font-bold mb-2">Registration Required</h3>
-                        <p className="text-xs text-primary/80 mb-4">Members are encouraged to register their attendance digitally for better record keeping.</p>
-                        <button className="w-full bg-primary text-white py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
-                            Toggle Registration Open
-                        </button>
-                    </div>
+                    {!isMember ? (
+                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-blue-500" />
+                                    Registrations
+                                </h3>
+                                <span className="text-xl font-black text-slate-900">{registrationCount}</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-4">Members who have confirmed their intent to attend digitaly.</p>
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500" style={{ width: `${Math.min((registrationCount / members.length) * 100, 100)}%` }}></div>
+                            </div>
+                        </div>
+                    ) : (
+                        <EventRegistration
+                            activityId={activityId}
+                            isAlreadyRegistered={isRegistered}
+                        />
+                    )}
                 </div>
 
-                <div className="lg:col-span-2">
-                    <AttendanceTracker
-                        activityId={activityId}
-                        activityTitle={activity.title}
-                        members={members}
-                        initialAttendances={initialAttendances}
-                    />
+                <div className="lg:col-span-2 space-y-6">
+                    {!isMember ? (
+                        <>
+                            <EventQRCode
+                                activityId={activityId}
+                                activityTitle={activity.title}
+                                activityDate={activity.date.toISOString()}
+                            />
+                            <AttendanceTracker
+                                activityId={activityId}
+                                activityTitle={activity.title}
+                                initialMembers={members}
+                                initialAttendances={initialAttendances}
+                                activityLevel={activity.level}
+                                cellId={session.user.cellId}
+                                sectorId={session.user.sectorId}
+                            />
+                        </>
+                    ) : (
+                        <div className="space-y-6">
+                            <QRScanner
+                                activityId={activityId}
+                                activityTitle={activity.title}
+                            />
+                            <div className="bg-white p-12 rounded-2xl border border-slate-100 flex flex-col items-center text-center">
+                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                                    <Calendar className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800">Participation Overview</h3>
+                                <p className="max-w-md text-slate-500 mt-2">
+                                    Thank you for your interest in this activity. As a member, you can scan the QR code provided by the leader to record your attendance. Your attendance will then wait for leader confirmation.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
