@@ -7,13 +7,12 @@ import { authOptions } from "@/lib/auth"
 import { Level } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
-export async function getContributions(filters?: { memberId?: string; level?: Level; recordedById?: string }) {
+export async function getContributions(filters?: { memberId?: string; recordedById?: string }) {
     const session = await getServerSession(authOptions)
     if (!session?.user) return null
 
     const where: Prisma.ContributionWhereInput = {}
     if (filters?.memberId) where.memberId = filters.memberId
-    if (filters?.level) where.level = filters.level
     if (filters?.recordedById) where.recordedById = filters.recordedById
 
     // Village Leader: only see contributions for members in their village
@@ -43,7 +42,6 @@ export async function getContributions(filters?: { memberId?: string; level?: Le
 export async function createContribution(data: {
     amount: number;
     memberId: string;
-    level: Level;
     description?: string;
     date?: Date;
 }) {
@@ -72,10 +70,9 @@ export async function createContribution(data: {
                 amount: data.amount,
                 memberId: data.memberId,
                 recordedById: session.user.id,
-                level: data.level,
                 description: data.description,
                 date: data.date ? new Date(data.date) : new Date(),
-            }
+            } as any
         })
         revalidatePath('/dashboard/contributions')
         return { success: true, data: contribution }

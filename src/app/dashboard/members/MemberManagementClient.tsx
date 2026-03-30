@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { getMembersForAdmin } from '@/app/actions/cell-admin'
-import { getVillageMembers, verifyMember, registerMember } from '@/app/actions/village-leader'
-import { Users, CheckCircle, Clock, ShieldAlert, Loader2, Plus, Copy } from 'lucide-react'
+import { getVillageMembers, verifyMember, registerMember, updateMemberStatus } from '@/app/actions/village-leader'
+import { Users, CheckCircle, Clock, ShieldAlert, Loader2, Plus, Copy, Edit2 } from 'lucide-react'
 
 export default function MemberManagementClient({
     cellId, sectorId, villageId, currentUserRole
@@ -13,7 +13,7 @@ export default function MemberManagementClient({
     const [members, setMembers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isPending, startTransition] = useTransition()
-    const [actionStatus, setActionStatus] = useState<{ id: string, status: 'verifying' | 'success' | 'error' } | null>(null)
+    const [actionStatus, setActionStatus] = useState<{ id: string, status: 'verifying' | 'success' | 'error' | 'updating' } | null>(null)
     const [selectedVillageId, setSelectedVillageId] = useState<string>('all')
 
     // Registration Modal States
@@ -21,8 +21,12 @@ export default function MemberManagementClient({
     const [regName, setRegName] = useState('')
     const [regId, setRegId] = useState('')
     const [regPhone, setRegPhone] = useState('')
+    const [regRole, setRegRole] = useState('MEMBER')
     const [isRegistering, setIsRegistering] = useState(false)
     const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
+
+    // Verification Roles
+    const [verifyRoles, setVerifyRoles] = useState<Record<string, string>>({})
 
     useEffect(() => {
         loadMembers()
@@ -44,17 +48,31 @@ export default function MemberManagementClient({
 
     async function handleVerify(userId: string) {
         setActionStatus({ id: userId, status: 'verifying' })
+        const assignedRole = verifyRoles[userId] || 'MEMBER'
 
         startTransition(async () => {
-            const result = await verifyMember(userId)
+            const result = await verifyMember(userId, assignedRole)
             if (result.success) {
                 setActionStatus({ id: userId, status: 'success' })
-                setMembers(prev => prev.map(m => m.id === userId ? { ...m, isVerified: true } : m))
+                setMembers(prev => prev.map(m => m.id === userId ? { ...m, isVerified: true, role: assignedRole } : m))
             } else {
                 setActionStatus({ id: userId, status: 'error' })
                 alert(result.error)
             }
             setTimeout(() => setActionStatus(null), 2000)
+        })
+    }
+
+    async function handleStatusChange(userId: string, newStatus: string) {
+        setActionStatus({ id: userId, status: 'updating' })
+        startTransition(async () => {
+            const result = await updateMemberStatus(userId, newStatus)
+            if (result.success) {
+                setMembers(prev => prev.map(m => m.id === userId ? { ...m, status: newStatus } : m))
+            } else {
+                alert(result.error)
+            }
+            setActionStatus(null)
         })
     }
 
@@ -77,7 +95,8 @@ export default function MemberManagementClient({
                 phone: regPhone,
                 villageId,
                 cellId,
-                sectorId
+                sectorId,
+                role: regRole
             })
 
             if (res.success && res.data) {
@@ -85,7 +104,7 @@ export default function MemberManagementClient({
                 setMembers(prev => [...prev, {
                     ...res.data,
                     village: { id: villageId, name: 'Your Village' },
-                }].sort((a, b) => a.name.localeCompare(b.name)))
+                }])
             } else {
                 alert(res.error || 'Failed to register member')
             }
@@ -101,14 +120,40 @@ export default function MemberManagementClient({
         setRegName('')
         setRegId('')
         setRegPhone('')
+        setRegRole('MEMBER')
         setGeneratedPassword(null)
     }
 
-    const uniqueVillages = Array.from(new Map(members.filter(m => m.village).map(m => [m.village.id, m.village])).values()) as { id: string, name: string }[];
+    const uniqueVillages = Array.from(new Map(members.filter(m => m.village).map(m => [m.village?.id, m.village])).values()) as { id: string, name: string }[];
     const filteredByVillage = members.filter(m => selectedVillageId === 'all' || m.villageId === selectedVillageId);
 
-    const pendingMembers = filteredByVillage.filter(m => !m.isVerified)
-    const verifiedMembers = filteredByVillage.filter(m => m.isVerified)
+    const pendingMembers = filteredByVillage.filter(m => !m.isVerified && !m.isVacant)
+
+    const verifiedOnly = filteredByVillage.filter(m => m.isVerified && !m.isVacant)
+    let verifiedMembers = [...verifiedOnly]
+
+    const roleOrder = ['VILLAGE_LEADER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE', 'MEMBER']
+    const requiredRoles = ['VILLAGE_LEADER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE']
+
+    verifiedMembers.sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role))
+
+    if ((currentUserRole === 'VILLAGE_LEADER' && villageId) || selectedVillageId !== 'all') {
+        const currentRoles = new Set(verifiedMembers.map(m => m.role))
+        requiredRoles.forEach(rr => {
+            if (!currentRoles.has(rr)) {
+                verifiedMembers.push({
+                    id: `vacant-${rr}`,
+                    name: 'Vacant',
+                    role: rr,
+                    isVacant: true,
+                    status: 'VACANT',
+                    nationalId: '-',
+                    phone: '-'
+                })
+            }
+        })
+        verifiedMembers.sort((a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role))
+    }
 
     if (loading) {
         return (
@@ -172,7 +217,7 @@ export default function MemberManagementClient({
                     </div>
                     <div>
                         <p className="text-sm font-medium text-slate-500">Verified</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{verifiedMembers.length}</h3>
+                        <h3 className="text-2xl font-bold text-slate-800">{verifiedOnly.length}</h3>
                     </div>
                 </div>
             </div>
@@ -192,14 +237,43 @@ export default function MemberManagementClient({
                     ) : (
                         pendingMembers.map(member => (
                             <div key={member.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="font-bold text-slate-800">{member.name}</h3>
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-sm text-slate-500 mt-1">
-                                        <span>ID: {member.nationalId}</span>
-                                        <span className="hidden sm:inline">•</span>
-                                        <span>Phone: {member.phone}</span>
-                                        <span className="hidden sm:inline">•</span>
-                                        <span>Village: {member.village?.name || 'N/A'}</span>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm shrink-0">
+                                        {member.profilePicture ? (
+                                            <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Users className="w-6 h-6 text-slate-300" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800">{member.name}</h3>
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-y-2 gap-x-4 text-sm text-slate-500 mt-2">
+                                            <span>ID: {member.nationalId}</span>
+                                            <span className="hidden sm:inline">•</span>
+                                            <span>Phone: {member.phone}</span>
+                                            <span className="hidden sm:inline">•</span>
+                                            <span>Village: {member.village?.name || 'N/A'}</span>
+
+                                            {currentUserRole === 'VILLAGE_LEADER' && (
+                                                <>
+                                                    <span className="hidden sm:inline">•</span>
+                                                    <select
+                                                        value={verifyRoles[member.id] || 'MEMBER'}
+                                                        onChange={(e) => setVerifyRoles({ ...verifyRoles, [member.id]: e.target.value })}
+                                                        className="px-2 py-1 text-xs border rounded-md font-medium text-slate-700 bg-white"
+                                                    >
+                                                        <option value="MEMBER">Member</option>
+                                                        {((currentUserRole as any) === 'CELL_ADMIN' || (currentUserRole as any) === 'SECTOR_ADMIN') && (
+                                                            <option value="VILLAGE_LEADER">Village Leader</option>
+                                                        )}
+                                                        <option value="VICE_VILLAGE_LEADER">Vice Village Leader</option>
+                                                        <option value="SECRETARY">Secretary</option>
+                                                        <option value="DISCIPLINE_COMMITTEE">Discipline Committee</option>
+                                                        <option value="INSPECTION_COMMITTEE">Inspection Committee</option>
+                                                    </select>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 {currentUserRole === 'VILLAGE_LEADER' && (
@@ -211,7 +285,7 @@ export default function MemberManagementClient({
                                         {actionStatus?.id === member.id ? (
                                             <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</>
                                         ) : (
-                                            'Verify Member'
+                                            'Verify & Assign Role'
                                         )}
                                     </button>
                                 )}
@@ -237,6 +311,7 @@ export default function MemberManagementClient({
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                    <th className="px-6 py-3 font-medium">Avatar</th>
                                     <th className="px-6 py-3 font-medium">Name</th>
                                     <th className="px-6 py-3 font-medium">National ID</th>
                                     <th className="px-6 py-3 font-medium">Phone</th>
@@ -245,20 +320,58 @@ export default function MemberManagementClient({
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {verifiedMembers.map(member => (
-                                    <tr key={member.id} className="hover:bg-slate-50/50 transition-colors text-sm">
-                                        <td className="px-6 py-4 font-medium text-slate-800">
-                                            {member.name}
+                                    <tr key={member.id} className={`hover:bg-slate-50/50 transition-colors text-sm ${member.isVacant ? 'bg-slate-50 opacity-70' : ''}`}>
+                                        <td className="px-6 py-4">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden border shadow-sm ${member.isVacant ? 'bg-slate-100 border-slate-200' : 'bg-red-50 border-red-100'}`}>
+                                                {member.profilePicture ? (
+                                                    <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Users className={`w-4 h-4 ${member.isVacant ? 'text-slate-300' : 'text-primary'}`} />
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-slate-800 flex flex-col items-start gap-1">
+                                                <span>{member.name}</span>
+                                                {member.role !== 'MEMBER' && (
+                                                    <span className="text-[10px] uppercase font-bold text-primary bg-red-50 px-2 py-0.5 rounded w-max">
+                                                        {member.role.replace(/_/g, ' ')}
+                                                    </span>
+                                                )}
+                                            </div>
                                             {currentUserRole !== 'VILLAGE_LEADER' && member.village && (
-                                                <div className="text-xs text-slate-500 font-normal mt-0.5">{member.village.name}</div>
+                                                <div className="text-xs text-slate-500 font-normal mt-1">{member.village.name}</div>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-slate-600">{member.nationalId}</td>
                                         <td className="px-6 py-4 text-slate-600">{member.phone}</td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                                                Active
-                                            </span>
+                                            {member.isVacant ? (
+                                                <span className="text-slate-400 italic text-xs">Unfilled</span>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    {currentUserRole === 'VILLAGE_LEADER' ? (
+                                                        <select
+                                                            value={member.status || 'ACTIVE'}
+                                                            onChange={(e) => handleStatusChange(member.id, e.target.value)}
+                                                            disabled={actionStatus?.id === member.id}
+                                                            className={`text-xs px-2.5 py-1 rounded-full font-semibold outline-none border-none shadow-sm cursor-pointer
+                                                                ${member.status === 'ACTIVE' || !member.status ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'}`}
+                                                        >
+                                                            <option value="ACTIVE">Active</option>
+                                                            <option value="MOVED">Moved</option>
+                                                            <option value="DECEASED">Deceased</option>
+                                                            <option value="SUSPENDED">Suspended</option>
+                                                        </select>
+                                                    ) : (
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                                                            ${member.status === 'ACTIVE' || !member.status ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'}`}>
+                                                            {member.status || 'ACTIVE'}
+                                                        </span>
+                                                    )}
+                                                    {actionStatus?.id === member.id && actionStatus?.status === 'updating' && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -290,6 +403,19 @@ export default function MemberManagementClient({
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
                                         <input type="tel" required value={regPhone} onChange={e => setRegPhone(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                        <select value={regRole} onChange={e => setRegRole(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all outline-none">
+                                            <option value="MEMBER">Member</option>
+                                            {((currentUserRole as any) === 'CELL_ADMIN' || (currentUserRole as any) === 'SECTOR_ADMIN') && (
+                                                <option value="VILLAGE_LEADER">Village Leader</option>
+                                            )}
+                                            <option value="VICE_VILLAGE_LEADER">Vice Village Leader</option>
+                                            <option value="SECRETARY">Secretary</option>
+                                            <option value="DISCIPLINE_COMMITTEE">Discipline Committee</option>
+                                            <option value="INSPECTION_COMMITTEE">Inspection Committee</option>
+                                        </select>
                                     </div>
                                 </form>
                             ) : (

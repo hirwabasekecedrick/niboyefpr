@@ -101,7 +101,7 @@ export async function getActivities() {
     }
 }
 
-export async function markAttendance(activityId: string, status: 'PRESENT' | 'ABSENT' | 'EXCUSED', targetUserId?: string, isScanned: boolean = false) {
+export async function markAttendance(activityId: string, status: 'PRESENT' | 'ABSENT' | 'EXCUSED', targetUserId?: string, isScanned: boolean = false, excusedReason?: string) {
     try {
         const session = await getServerSession(authOptions)
         if (!session?.user) return { success: false, error: 'Unauthorized' }
@@ -130,14 +130,16 @@ export async function markAttendance(activityId: string, status: 'PRESENT' | 'AB
                 update: {
                     status,
                     isConfirmed,
-                    confirmedBy: isConfirmed ? session.user.id : null
+                    confirmedBy: isConfirmed ? session.user.id : null,
+                    excusedReason: status === 'EXCUSED' ? excusedReason : null
                 } as any,
                 create: {
                     userId,
                     activityId,
                     status,
                     isConfirmed,
-                    confirmedBy: isConfirmed ? session.user.id : null
+                    confirmedBy: isConfirmed ? session.user.id : null,
+                    excusedReason: status === 'EXCUSED' ? excusedReason : null
                 } as any
             }))
 
@@ -274,5 +276,26 @@ export async function searchMembersForActivity(query: string, level: string, cel
     } catch (error) {
         console.error('Error searching members:', error);
         return [];
+    }
+}
+
+export async function updateEventDetails(activityId: string, notes: string | null, photos: string[]) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user) return { success: false, error: 'Unauthorized' }
+        if (!['VILLAGE_LEADER', 'CELL_ADMIN', 'SECTOR_ADMIN'].includes(session.user.role)) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        await (prisma.activity.update({
+            where: { id: activityId },
+            data: { notes, photos } as any
+        }))
+
+        revalidatePath(`/dashboard/activities/${activityId}`)
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating event details:', error)
+        return { success: false, error: 'Failed to update event details' }
     }
 }

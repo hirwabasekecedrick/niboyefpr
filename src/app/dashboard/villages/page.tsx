@@ -15,21 +15,29 @@ export default async function VillagesPage() {
         redirect("/dashboard");
     }
 
-    const cellId = session.user.cellId || undefined;
-    const initialVillages = await getVillagesForAdmin(cellId);
+    const sectorId = session.user.sectorId || '';
+    const cellId = session.user.cellId || '';
+    const initialVillages = await getVillagesForAdmin(cellId ? cellId : undefined);
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-                    Village Management
+                    {session.user.role === 'SECTOR_ADMIN' ? 'Jurisdictional Hierarchy' : 'Village Management'}
                 </h1>
                 <p className="text-slate-500">
-                    Manage and register new villages within your jurisdiction.
+                    {session.user.role === 'SECTOR_ADMIN'
+                        ? 'Overview of cells and villages within the sector.'
+                        : 'Manage and register new villages within your jurisdiction.'}
                 </p>
             </div>
 
-            <VillagesClient initialVillages={initialVillages} cellId={cellId} currentUserRole={session.user.role} />
+            <VillagesClient
+                initialVillages={initialVillages}
+                cellId={cellId}
+                sectorId={sectorId}
+                currentUserRole={session.user.role}
+            />
         </div>
     );
 }

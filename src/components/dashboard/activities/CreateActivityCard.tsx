@@ -20,7 +20,7 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                 ; (e.target as HTMLFormElement).reset()
                 setIsOnline(false)
             } else {
-                setError(res.error || 'Failed to create activity')
+                setError(res.error || 'Failed to create event')
             }
         })
     }
@@ -29,11 +29,11 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
         <div className="bg-white p-6 rounded-xl border border-red-100 shadow-sm h-fit">
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
-                New Activity
+                New Event
             </h2>
             <form onSubmit={onSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Activity Title</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Event Title</label>
                     <input
                         name="title"
                         required
@@ -83,7 +83,7 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                             onChange={(e) => setIsOnline(e.target.checked)}
                             className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                         />
-                        <label htmlFor="isOnline" className="text-sm font-medium text-slate-700">This is an Online Activity</label>
+                        <label htmlFor="isOnline" className="text-sm font-medium text-slate-700">This is an Online Event</label>
                     </div>
 
                     {!isOnline ? (
@@ -114,7 +114,7 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                         name="description"
                         rows={3}
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
-                        placeholder="Brief details about the activity..."
+                        placeholder="Brief details about the event..."
                     />
                 </div>
 
@@ -124,7 +124,7 @@ export function CreateActivityCard({ userRole }: { userRole: string }) {
                     disabled={isPending}
                     className="w-full bg-primary text-white py-2 rounded-md font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
-                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Activity'}
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Event'}
                 </button>
             </form>
         </div>

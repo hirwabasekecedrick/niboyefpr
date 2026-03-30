@@ -93,9 +93,18 @@ export default function VillageMembersModal({
                                     ) : (
                                         villageData.members.map((member: any) => (
                                             <div key={member.id} className="p-4 flex justify-between items-center hover:bg-slate-50/50 transition-colors">
-                                                <div>
-                                                    <h4 className="font-bold text-slate-800 text-sm">{member.name}</h4>
-                                                    <p className="text-xs text-slate-500 mt-0.5 font-medium">{member.nationalId} • {member.phone}</p>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-white shadow-sm shrink-0">
+                                                        {member.profilePicture ? (
+                                                            <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Users className="w-5 h-5 text-slate-300" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-800 text-sm">{member.name}</h4>
+                                                        <p className="text-xs text-slate-500 mt-0.5 font-medium">{member.nationalId} • {member.phone}</p>
+                                                    </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="font-bold text-green-600 text-sm">

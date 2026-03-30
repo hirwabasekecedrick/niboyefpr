@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { markAttendance, confirmAttendance, searchMembersForActivity } from '@/app/actions/activities'
-import { Check, X, Minus, Loader2, User, Search, Users } from 'lucide-react'
+import { Check, X, Minus, Loader2, User, Search, Users, Pencil, Save, AlertCircle, Info } from 'lucide-react'
 
 export function AttendanceTracker({
     activityId,
@@ -23,10 +23,13 @@ export function AttendanceTracker({
 }) {
     const [isPending, startTransition] = useTransition()
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
-    const [attendances, setAttendances] = useState<Record<string, { status: 'PRESENT' | 'ABSENT' | 'EXCUSED', isConfirmed: boolean, id?: string }>>(
-        Object.fromEntries(initialAttendances.map(a => [a.userId, { status: a.status, isConfirmed: a.isConfirmed, id: a.id }]))
+    const [attendances, setAttendances] = useState<Record<string, { status: 'PRESENT' | 'ABSENT' | 'EXCUSED', isConfirmed: boolean, id?: string, excusedReason?: string }>>(
+        Object.fromEntries(initialAttendances.map(a => [a.userId, { status: a.status, isConfirmed: a.isConfirmed, id: a.id, excusedReason: a.excusedReason }]))
     )
     const [members, setMembers] = useState<any[]>(initialMembers)
+    const [excusingId, setExcusingId] = useState<string | null>(null)
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [excuseReason, setExcuseReason] = useState('')
 
     // Search State
     const [searchQuery, setSearchQuery] = useState('')
@@ -63,14 +66,32 @@ export function AttendanceTracker({
 
     const handleToggle = (userData: any, newStatus: 'PRESENT' | 'ABSENT' | 'EXCUSED') => {
         const userId = userData.id
+
+        if (newStatus === 'EXCUSED') {
+            setExcusingId(userId)
+            setExcuseReason('')
+            return
+        }
+
+        executeToggle(userData, newStatus)
+    }
+
+    const executeToggle = (userData: any, newStatus: 'PRESENT' | 'ABSENT' | 'EXCUSED', reason?: string) => {
+        const userId = userData.id
+
         startTransition(async () => {
             // Manual marks by a leader are always confirmed
-            const res = await markAttendance(activityId, newStatus, userId, false)
+            const res = await markAttendance(activityId, newStatus, userId, false, reason)
             if (res.success) {
                 setAttendances(prev => ({
                     ...prev,
-                    [userId]: { status: newStatus, isConfirmed: true }
+                    [userId]: { status: newStatus, isConfirmed: true, excusedReason: reason }
                 }))
+                // Clear UI states
+                setExcusingId(null)
+                setEditingId(null)
+                setExcuseReason('')
+
                 // If member was from search results, promote them to the main register view
                 if (!members.some(m => m.id === userId)) {
                     setMembers(prev => [userData, ...prev])
@@ -195,61 +216,152 @@ export function AttendanceTracker({
                         No expected attendees yet. Use the search to mark attendance for unregistered members.
                     </div>
                 ) : (
-                    members.map((member) => (
-                        <div key={member.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${attendances[member.id]?.status === 'PRESENT' ? 'bg-green-50 border-green-200 text-green-600' :
-                                    attendances[member.id]?.status === 'ABSENT' ? 'bg-red-50 border-red-200 text-primary' :
-                                        attendances[member.id]?.status === 'EXCUSED' ? 'bg-blue-50 border-blue-200 text-blue-600' :
-                                            'bg-slate-50 border-slate-200 text-slate-400'
-                                    }`}>
-                                    <User className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-slate-700">{member.name}</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-[10px] text-slate-400 font-mono tracking-tighter">{member.nationalId}</p>
-                                        {attendances[member.id]?.status === 'PRESENT' && !attendances[member.id]?.isConfirmed && (
-                                            <span className="text-[8px] font-bold text-yellow-600 bg-yellow-50 px-1 rounded uppercase border border-yellow-200">Pending</span>
+                    members.map((member: any) => (
+                        <div key={member.id} className="p-4 flex flex-col hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 overflow-hidden shadow-sm shrink-0 ${attendances[member.id]?.status === 'PRESENT' ? 'border-green-100 bg-green-50' :
+                                        attendances[member.id]?.status === 'ABSENT' ? 'border-red-100 bg-red-50' :
+                                            attendances[member.id]?.status === 'EXCUSED' ? 'border-blue-100 bg-blue-50' :
+                                                'border-slate-100 bg-slate-50'
+                                        }`}>
+                                        {member.profilePicture ? (
+                                            <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className={`w-5 h-5 ${attendances[member.id]?.status === 'PRESENT' ? 'text-green-600' :
+                                                attendances[member.id]?.status === 'ABSENT' ? 'text-primary' :
+                                                    attendances[member.id]?.status === 'EXCUSED' ? 'text-blue-600' :
+                                                        'text-slate-300'
+                                                }`} />
                                         )}
                                     </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-800">{member.name}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-slate-400 font-mono tracking-tighter">{member.nationalId}</p>
+                                            {attendances[member.id] && (
+                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm flex items-center gap-1
+                                                ${attendances[member.id].status === 'PRESENT' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                        attendances[member.id].status === 'ABSENT' ? 'bg-red-50 text-primary border-red-100' :
+                                                            'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                    {attendances[member.id].status === 'PRESENT' && <Check className="w-2 h-2" />}
+                                                    {attendances[member.id].status === 'ABSENT' && <X className="w-2 h-2" />}
+                                                    {attendances[member.id].status === 'EXCUSED' && <Minus className="w-2 h-2" />}
+                                                    {attendances[member.id].status}
+                                                </span>
+                                            )}
+                                            {attendances[member.id]?.status === 'PRESENT' && !attendances[member.id]?.isConfirmed && (
+                                                <span className="text-[8px] font-bold text-yellow-600 bg-yellow-50 px-1 rounded uppercase border border-yellow-200">Pending</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {attendances[member.id] && editingId !== member.id ? (
+                                        <div className="flex items-center gap-2">
+                                            {attendances[member.id]?.status === 'PRESENT' && !attendances[member.id]?.isConfirmed && (
+                                                <button
+                                                    onClick={() => handleConfirm(member.id)}
+                                                    disabled={confirmingId === member.id}
+                                                    className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-all disabled:opacity-50"
+                                                >
+                                                    {confirmingId === member.id ? '...' : 'Confirm'}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => setEditingId(member.id)}
+                                                className="p-1.5 text-slate-400 hover:text-primary hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100 shadow-sm"
+                                                title="Edit Attendance"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex bg-slate-100 p-1 rounded-lg shadow-inner">
+                                            <button
+                                                onClick={() => executeToggle(member, 'PRESENT')}
+                                                className="px-3 py-1 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors border border-green-200 flex items-center gap-1.5 text-[11px] font-bold"
+                                            >
+                                                <Check className="w-3 h-3" />
+                                                Present
+                                            </button>
+                                            <button
+                                                onClick={() => executeToggle(member, 'ABSENT')}
+                                                className="px-3 py-1 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors border border-red-200 flex items-center gap-1.5 text-[11px] font-bold"
+                                            >
+                                                <X className="w-3 h-3" />
+                                                Absent
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggle(member, 'EXCUSED')}
+                                                className="px-3 py-1 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors border border-blue-200 flex items-center gap-1.5 text-[11px] font-bold"
+                                            >
+                                                <Minus className="w-3 h-3" />
+                                                Excused
+                                            </button>
+                                            {editingId === member.id && (
+                                                <button
+                                                    onClick={() => setEditingId(null)}
+                                                    className="ml-1 px-2 py-1 text-slate-400 hover:text-slate-600 font-medium text-[11px]"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                {attendances[member.id]?.status === 'PRESENT' && !attendances[member.id]?.isConfirmed && (
-                                    <button
-                                        onClick={() => handleConfirm(member.id)}
-                                        disabled={confirmingId === member.id}
-                                        className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-all disabled:opacity-50"
-                                    >
-                                        {confirmingId === member.id ? '...' : 'Confirm'}
-                                    </button>
-                                )}
-                                <div className="flex bg-slate-100 p-1 rounded-lg">
-                                    <button
-                                        onClick={() => handleToggle(member, 'PRESENT')}
-                                        className="px-3 py-1 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors border border-green-200"
-                                        title="Confirmed Present"
-                                    >
-                                        Mark Present
-                                    </button>
-                                    <button
-                                        onClick={() => handleToggle(member, 'ABSENT')}
-                                        className="px-3 py-1 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors border border-red-200"
-                                        title="Confirmed Absent"
-                                    >
-                                        Mark Absent
-                                    </button>
-                                    <button
-                                        onClick={() => handleToggle(member, 'EXCUSED')}
-                                        className="px-3 py-1 bg-slate-50 text-slate-700 rounded-md hover:bg-slate-100 transition-colors border border-slate-200"
-                                        title="Confirmed Excused"
-                                    >
-                                        Mark Excused
-                                    </button>
+                            {/* Excuse Reason Input Area */}
+                            {excusingId === member.id && (
+                                <div className="mt-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
+                                    <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        Why is this member excused?
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            autoFocus
+                                            value={excuseReason}
+                                            onChange={(e) => setExcuseReason(e.target.value)}
+                                            placeholder="e.g. Travel, Illness, Family commitment..."
+                                            className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') executeToggle(member, 'EXCUSED', excuseReason)
+                                                if (e.key === 'Escape') setExcusingId(null)
+                                            }}
+                                        />
+                                        <button
+                                            onClick={() => executeToggle(member, 'EXCUSED', excuseReason)}
+                                            disabled={!excuseReason.trim() || isPending}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                                        >
+                                            <Save className="w-4 h-4" />
+                                            Save
+                                        </button>
+                                        <button
+                                            onClick={() => setExcusingId(null)}
+                                            className="px-3 py-1.5 text-slate-400 hover:text-slate-600 text-sm font-medium"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Existing Reason Display */}
+                            {attendances[member.id]?.status === 'EXCUSED' && attendances[member.id]?.excusedReason && excusingId !== member.id && (
+                                <div className="mt-2 ml-13 flex items-start gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100 max-w-md">
+                                    <div className="p-1 bg-blue-50 text-blue-400 rounded">
+                                        <Info className="w-3 h-3" />
+                                    </div>
+                                    <p className="text-xs text-slate-500 italic leading-relaxed">
+                                        <span className="font-bold text-slate-400 uppercase text-[9px] mr-1 not-italic tracking-tighter">Reason:</span>
+                                        {attendances[member.id]?.excusedReason}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}

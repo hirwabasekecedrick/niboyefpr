@@ -9,6 +9,7 @@ import { Calendar, MapPin, Info, CheckCircle2, Users, Laptop, ExternalLink, Cloc
 import { EventRegistration } from "@/components/dashboard/activities/EventRegistration";
 import { EventQRCode } from "@/components/dashboard/activities/EventQRCode";
 import { QRScanner } from "@/components/dashboard/activities/QRScanner";
+import { EventEditor } from "@/components/dashboard/activities/EventEditor";
 
 export default async function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
@@ -58,7 +59,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                             {activity.level} Level
                         </span>
                         <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar className="w-4 h-4" />
                             {new Date(activity.date).toLocaleDateString()}
                         </span>
                         {(activity as any).startTime && (
@@ -75,7 +76,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white p-6 rounded-2xl border border-red-100 shadow-sm">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Activity Details</h2>
+                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Event Details</h2>
                         <div className="space-y-4">
                             <div className="flex gap-3">
                                 <Info className="w-5 h-5 text-primary shrink-0" />
@@ -85,7 +86,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-3">
                                         <Laptop className="w-5 h-5 text-primary shrink-0" />
-                                        <p className="text-sm font-bold text-slate-800">Online Activity</p>
+                                        <p className="text-sm font-bold text-slate-800">Online Event</p>
                                     </div>
                                     {(activity as any).onlineLink && (
                                         <a
@@ -112,6 +113,37 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                             <p className="text-xs text-slate-400 italic">Created by {(activity as any).author.name} ({(activity as any).author.role.toLowerCase().replace('_', ' ')})</p>
                         </div>
                     </div>
+
+                    {((activity as any).notes || (activity as any).photos?.length > 0) && (
+                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+                            {(activity as any).notes && (
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Event Notes</h3>
+                                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{(activity as any).notes}</p>
+                                </div>
+                            )}
+                            {(activity as any).photos?.length > 0 && (
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Event Photos</h3>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {(activity as any).photos.map((url: string, idx: number) => (
+                                            <div key={idx} className="rounded-lg overflow-hidden border border-slate-100">
+                                                <img src={url} alt={`Event photo ${idx + 1}`} className="w-full h-auto" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {!isMember && (
+                        <EventEditor
+                            activityId={activityId}
+                            initialNotes={(activity as any).notes}
+                            initialPhotos={(activity as any).photos || []}
+                        />
+                    )}
 
                     {!isMember ? (
                         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -165,7 +197,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800">Participation Overview</h3>
                                 <p className="max-w-md text-slate-500 mt-2">
-                                    Thank you for your interest in this activity. As a member, you can scan the QR code provided by the leader to record your attendance. Your attendance will then wait for leader confirmation.
+                                    Thank you for your interest in this event. As a member, you can scan the QR code provided by the leader to record your attendance. Your attendance will then wait for leader confirmation.
                                 </p>
                             </div>
                         </div>

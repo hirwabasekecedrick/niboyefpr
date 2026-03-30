@@ -10,7 +10,6 @@ type Contribution = {
     date: Date
     memberId: string
     recordedById: string
-    level: string
     description: string | null
     member: { id: string, name: string, nationalId: string }
     recordedBy: { id: string, name: string }
@@ -28,10 +27,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
     const [formNationalId, setFormNationalId] = useState('')
     const [formAmount, setFormAmount] = useState('')
     const [formDescription, setFormDescription] = useState('')
-    const [formLevel, setFormLevel] = useState(
-        currentUserRole === 'SECTOR_ADMIN' ? 'SECTOR' :
-            currentUserRole === 'VILLAGE_LEADER' ? 'VILLAGE' : 'CELL'
-    )
     const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
 
     const filteredContributions = contributions.filter(c =>
@@ -64,7 +59,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
             const res = await createContribution({
                 amount: parseFloat(formAmount),
                 memberId: foundMember.id,
-                level: formLevel as "VILLAGE" | "CELL" | "SECTOR",
                 description: formDescription,
                 date: new Date(formDate)
             })
@@ -92,7 +86,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
         setFormNationalId('')
         setFormAmount('')
         setFormDescription('')
-        setFormLevel(currentUserRole === 'SECTOR_ADMIN' ? 'SECTOR' : 'CELL')
         setFormDate(new Date().toISOString().split('T')[0])
         setFoundMember(null)
         setLookupError('')
@@ -139,7 +132,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
                             <th className="px-4 py-3">Date</th>
                             <th className="px-4 py-3">Member</th>
                             <th className="px-4 py-3">Amount (RWF)</th>
-                            <th className="px-4 py-3">Level</th>
                             <th className="px-4 py-3 md:table-cell hidden">Description</th>
                             <th className="px-4 py-3 md:table-cell hidden">Recorded By</th>
                             <th className="px-4 py-3 text-right">Actions</th>
@@ -162,11 +154,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
                                     </td>
                                     <td className="px-4 py-3 font-semibold text-green-600">
                                         {c.amount.toLocaleString()}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">
-                                            {c.level}
-                                        </span>
                                     </td>
                                     <td className="px-4 py-3 text-slate-600 md:table-cell hidden truncate max-w-[200px]">
                                         {c.description || '-'}
@@ -257,18 +244,6 @@ export default function ContributionsClient({ initialContributions, currentUserR
                                         onChange={(e) => setFormAmount(e.target.value)}
                                         className="w-full p-2 border rounded-md text-sm"
                                     />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Level</label>
-                                    <select
-                                        value={formLevel}
-                                        onChange={(e) => setFormLevel(e.target.value)}
-                                        className="w-full p-2 border rounded-md text-sm"
-                                    >
-                                        <option value="CELL">Cell</option>
-                                        <option value="SECTOR">Sector</option>
-                                    </select>
                                 </div>
 
                                 <div>

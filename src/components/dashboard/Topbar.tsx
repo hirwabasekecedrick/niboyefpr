@@ -40,8 +40,12 @@ export function Topbar({ user }: { user: any }) {
                         </p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{user?.role?.replace('_', ' ')}</p>
                     </div>
-                    <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-primary border border-red-100 shadow-sm">
-                        <UserIcon className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-primary border border-red-100 shadow-sm overflow-hidden">
+                        {user?.profilePicture ? (
+                            <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <UserIcon className="w-5 h-5" />
+                        )}
                     </div>
 
                     <button

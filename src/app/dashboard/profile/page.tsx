@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { User, CreditCard, Phone, MapPin, Building, Flag, ShieldCheck } from "lucide-react";
+import { ProfilePictureUpload } from "@/components/dashboard/profile/ProfilePictureUpload";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -31,9 +32,7 @@ export default async function ProfilePage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="bg-primary/5 p-8 border-b border-red-100 flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-full bg-white border-2 border-primary shadow-sm flex items-center justify-center text-primary">
-                        <User className="w-10 h-10" />
-                    </div>
+                    <ProfilePictureUpload initialImage={(userProfile as any).profilePicture} />
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800">{userProfile.name}</h2>
                         <div className="flex items-center gap-2 mt-2">

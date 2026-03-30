@@ -11,7 +11,7 @@ export async function getVillageMembers(villageId: string) {
         return await prisma.user.findMany({
             where: {
                 villageId,
-                role: 'MEMBER'
+                role: { in: ['MEMBER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE'] }
             },
             orderBy: { name: 'asc' },
             include: {
@@ -26,16 +26,24 @@ export async function getVillageMembers(villageId: string) {
     }
 }
 
-export async function verifyMember(userId: string) {
+export async function verifyMember(userId: string, assignedRole?: string) {
     try {
         const session = await getServerSession(authOptions)
-        if (!session?.user || session.user.role !== 'VILLAGE_LEADER') {
-            return { success: false, error: 'Unauthorized. Only Village Leaders can verify members.' }
+        if (!session?.user || !['VILLAGE_LEADER', 'VICE_VILLAGE_LEADER', 'SECRETARY'].includes(session.user.role)) {
+            return { success: false, error: 'Unauthorized. Only Village Admin Roles can verify members.' }
+        }
+
+        const updateData: any = { isVerified: true }
+        if (assignedRole) {
+            const validRoles = ['MEMBER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE']
+            if (validRoles.includes(assignedRole)) {
+                updateData.role = assignedRole as any
+            }
         }
 
         await prisma.user.update({
             where: { id: userId },
-            data: { isVerified: true }
+            data: updateData
         })
 
         revalidatePath('/dashboard/members')
@@ -53,11 +61,12 @@ export async function registerMember(data: {
     villageId: string
     cellId: string
     sectorId: string
+    role?: string
 }) {
     try {
         const session = await getServerSession(authOptions)
-        if (!session?.user || session.user.role !== 'VILLAGE_LEADER') {
-            return { success: false, error: 'Unauthorized. Only Village Leaders can register members.' }
+        if (!session?.user || !['VILLAGE_LEADER', 'VICE_VILLAGE_LEADER', 'SECRETARY'].includes(session.user.role)) {
+            return { success: false, error: 'Unauthorized. Only Village Admin Roles can register members.' }
         }
 
         // Generate a readable default password: name initials + national ID last 4 digits
@@ -68,12 +77,15 @@ export async function registerMember(data: {
 
         const passwordHash = await hash(defaultPassword, 12)
 
+        const validRoles = ['MEMBER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE']
+        const finalRole = (data.role && validRoles.includes(data.role)) ? data.role : 'MEMBER'
+
         const newUser = await prisma.user.create({
             data: {
                 name: data.name,
                 nationalId: data.nationalId,
                 phone: data.phone,
-                role: 'MEMBER',
+                role: finalRole as any,
                 isVerified: true, // Auto-verify since registered by leader
                 villageId: data.villageId,
                 cellId: data.cellId,
@@ -123,5 +135,25 @@ export async function updateLastSeen() {
     } catch (error) {
         // Silently fail – not critical
         console.error('Error updating lastSeen:', error)
+    }
+}
+
+export async function updateMemberStatus(userId: string, newStatus: string) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user || !['VILLAGE_LEADER', 'VICE_VILLAGE_LEADER', 'SECRETARY'].includes(session.user.role)) {
+            return { success: false, error: 'Unauthorized.' }
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { status: newStatus }
+        })
+
+        revalidatePath('/dashboard/members')
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating status:', error)
+        return { success: false, error: 'Failed to update status' }
     }
 }

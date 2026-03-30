@@ -11,7 +11,7 @@ export default async function MyActivitiesPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold text-slate-800 tracking-tight">My Activities</h1>
+                <h1 className="text-2xl font-bold text-slate-800 tracking-tight">My Events</h1>
                 <p className="text-slate-500">View and participate in events in your village and hierarchy.</p>
             </div>
 
@@ -19,7 +19,7 @@ export default async function MyActivitiesPage() {
                 {activities.length === 0 ? (
                     <div className="bg-white p-12 text-center rounded-xl border border-red-50 text-slate-400">
                         <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                        <p>No activities scheduled yet.</p>
+                        <p>No events scheduled yet.</p>
                     </div>
                 ) : (
                     activities.map((act) => (

@@ -36,6 +36,11 @@ export async function registerMember(formData: FormData) {
     const sectorId = formData.get('sectorId') as string
     const cellId = formData.get('cellId') as string
     const villageId = formData.get('villageId') as string
+    const requestedRole = (formData.get('role') as string) || 'MEMBER'
+
+    // Validate role
+    const validRoles = ['MEMBER', 'VICE_VILLAGE_LEADER', 'SECRETARY', 'DISCIPLINE_COMMITTEE', 'INSPECTION_COMMITTEE']
+    const finalRole = validRoles.includes(requestedRole) ? requestedRole as any : 'MEMBER'
 
     if (!nationalId || nationalId.length !== 16) {
         return { success: false, error: "National ID must be 16 digits." }
@@ -58,7 +63,7 @@ export async function registerMember(formData: FormData) {
                 nationalId,
                 phone,
                 passwordHash,
-                role: 'MEMBER',
+                role: finalRole,
                 isVerified: false,
                 sectorId,
                 cellId,

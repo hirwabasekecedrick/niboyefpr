@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Bell, Info, AlertTriangle, CheckCircle, BellOff } from 'lucide-react'
 import { getNotifications, markNotificationAsRead } from '@/app/actions/notifications'
 
@@ -8,6 +8,22 @@ export function NotificationCenter() {
     const [notifications, setNotifications] = useState<any[]>([])
     const [isOpen, setIsOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isOpen])
 
     useEffect(() => {
         async function load() {
@@ -30,7 +46,7 @@ export function NotificationCenter() {
     }
 
     return (
-        <div className="relative">
+        <div className="relative" ref={containerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 text-slate-400 hover:text-primary relative hover:bg-red-50 rounded-full transition-colors"

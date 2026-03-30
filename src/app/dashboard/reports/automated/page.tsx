@@ -71,9 +71,18 @@ export default async function AutomatedReportingPage() {
                                 <p className="text-xs font-bold text-slate-400 uppercase mb-2">Attendance Participation</p>
                                 <div className="flex items-center gap-2">
                                     <Building className="w-5 h-5 text-primary" />
-                                    <span className="text-2xl font-black text-primary">{latestReport.metrics.totalAttendance.toLocaleString()} Marks</span>
+                                    <span className="text-2xl font-black text-primary">{(latestReport.metrics.totalAttendance || 0).toLocaleString()} Marks</span>
                                 </div>
                             </div>
+                            {latestReport.metrics.totalContributions !== undefined && (
+                                <div className="p-6 bg-green-50 rounded-xl border border-green-100 md:col-span-3">
+                                    <p className="text-xs font-bold text-green-600 uppercase mb-2">Total Contributions Collected</p>
+                                    <div className="flex items-center gap-2">
+                                        <Building className="w-5 h-5 text-green-600" />
+                                        <span className="text-2xl font-black text-green-700">{latestReport.metrics.totalContributions.toLocaleString()} RWF</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl">No reports generated yet. Run the cron job to see data.</div>

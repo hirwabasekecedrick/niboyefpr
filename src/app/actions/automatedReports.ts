@@ -13,10 +13,12 @@ export type AutomatedReport = {
     scopeId: string
     scopeName: string
     sectorId?: string
+    cellId?: string
     metrics: {
         totalMembers: number
         totalActivities: number
-        totalAttendance: number
+        totalAttendance?: number
+        totalContributions?: number
     }
 }
 
@@ -38,17 +40,19 @@ export async function getAutomatedReports(): Promise<AutomatedReport[]> {
             const content = JSON.parse(rawContent) as AutomatedReport
 
             // Authorization logic
-            if (user.role === 'CELL_ADMIN') {
-                if (content.level === 'SECTOR') continue // Cell Admin cannot see Sector reports
-                if (content.scopeId !== user.cellId) continue // Cell Admin can only see their Cell
-            }
             if (user.role === 'SECTOR_ADMIN') {
-                if (content.level === 'CELL' && content.sectorId !== user.sectorId) continue // Sector Admin sees Cells inside their sector
-                if (content.level === 'SECTOR' && content.scopeId !== user.sectorId) continue // Only their Sector
+                if (content.level === 'SECTOR' && content.scopeId !== user.sectorId) continue
+                if (content.level === 'CELL' && content.sectorId !== user.sectorId) continue
+                if (content.level === 'VILLAGE' && content.sectorId !== user.sectorId) continue
+            }
+            if (user.role === 'CELL_ADMIN') {
+                if (content.level === 'SECTOR') continue
+                if (content.level === 'CELL' && content.scopeId !== user.cellId) continue
+                if (content.level === 'VILLAGE' && content.cellId !== user.cellId) continue
             }
             if (user.role === 'VILLAGE_LEADER') {
-                if (content.level !== 'VILLAGE') continue // Village Leader only sees Village reports
-                if (content.scopeId !== user.villageId) continue // Only their Village
+                if (content.level !== 'VILLAGE') continue
+                if (content.scopeId !== user.villageId) continue
             }
 
             reports.push(content)

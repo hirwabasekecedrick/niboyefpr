@@ -147,6 +147,24 @@ export default function RegisterPage() {
                                     className="w-full h-11 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm"
                                 />
                             </div>
+
+                            {/* Requested Role */}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-primary" /> Requested Role
+                                </label>
+                                <select
+                                    name="role"
+                                    className="w-full h-11 px-3 py-2 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm"
+                                    defaultValue="MEMBER"
+                                >
+                                    <option value="MEMBER">Member</option>
+                                    <option value="VICE_VILLAGE_LEADER">Vice Village Leader</option>
+                                    <option value="SECRETARY">Secretary</option>
+                                    <option value="DISCIPLINE_COMMITTEE">Discipline Committee</option>
+                                    <option value="INSPECTION_COMMITTEE">Inspection Committee</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="border-t border-slate-100 pt-6">
